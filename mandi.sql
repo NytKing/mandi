@@ -1,88 +1,98 @@
 --USE projects
--- selecting top 10 & bottom 10 sold commodites
---SELECT b.Commodity AS commodities, cnt
 
---FROM
+--1. selecting top 10 & bottom 10 sold commodites
 
---(SELECT TOP 10 Commodity, COUNT(Commodity) AS cnt
---FROM [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$]
---GROUP BY Commodity
---ORDER BY cnt) AS b
+SELECT b.Commodity AS commodities, cnt
 
---UNION
+FROM
 
---SELECT t.Commodity AS top10, cnt
+(SELECT TOP 10 Commodity, COUNT(Commodity) AS cnt
+FROM [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$]
+GROUP BY Commodity
+ORDER BY cnt) AS b
 
---FROM
+UNION
 
---(SELECT TOP 10 Commodity, COUNT(Commodity) AS cnt
---FROM [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$]
---GROUP BY Commodity
---ORDER BY cnt DESC) AS t
+SELECT t.Commodity AS top10, cnt
 
---ORDER BY cnt DESC
+FROM
 
----- viewing the states where the prices of commidities are the highest 
---SELECT state,Commodity, ranky
+(SELECT TOP 10 Commodity, COUNT(Commodity) AS cnt
+FROM [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$]
+GROUP BY Commodity
+ORDER BY cnt DESC) AS t
 
---FROM
+ORDER BY cnt DESC
 
---(SELECT state, commodity, RANK() OVER(PARTITION BY commodity ORDER BY [max price]) AS ranky
---FROM [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$]) AS new
+-- 2.viewing the states where the prices of commidities are the highest 
 
---WHERE ranky = 1
+SELECT state,Commodity, ranky
 
----- viewing which commodity is sold most by each state
---SELECT *,RANK() OVER(PARTITION BY state ORDER BY cnt DESC) AS ranky
+FROM
 
---FROM
+(SELECT state, commodity, RANK() OVER(PARTITION BY commodity ORDER BY [max price]) AS ranky
+FROM [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$]) AS new
 
---(SELECT state,Commodity, COUNT(Commodity) AS cnt
---FROM [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$]
---GROUP BY Commodity,state) AS test 
+WHERE ranky = 1
 
---ORDER BY state, commodity,ranky DESC  
+--3.viewing which commodity is sold most by each state
 
----- finding the average pice of commodities
---SELECT Commodity, ROUND(AVG([max Price]),2) AS [average price]
---FROM [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$]
---GROUP BY commodity
---ORDER BY [average price] DESC
+SELECT *,RANK() OVER(PARTITION BY state ORDER BY cnt DESC) AS ranky
 
----- adding a new category column to livestocks and edible stuffs
---SELECT TOP 10 *, CASE WHEN commodity IN ('ox','hen','bull','cow','calf','fish','duck','goat','he buffalo','pigs','she buffalo') THEN 'livestock' ELSE 'Edible' END AS category
---FROM [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$]
+FROM
 
----- viewing the percentage change of every commodity by two methods
-----1. by self join
---SELECT state,District,Market,real.commodity,[Max Price],avg_price,CONCAT(ROUND((([Max Price]-avg_price)/avg_price) *100,2),'%') AS p_change
+(SELECT state,Commodity, COUNT(Commodity) AS cnt
+FROM [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$]
+GROUP BY Commodity,state) AS test 
+
+ORDER BY state, commodity,ranky DESC  
+
+--4. finding the average pice of commodities
+
+SELECT Commodity, ROUND(AVG([max Price]),2) AS [average price]
+FROM [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$]
+GROUP BY commodity
+ORDER BY [average price] DESC
+
+-- 5.adding a new category column to livestocks and edible stuffs
+
+SELECT TOP 10 *, CASE WHEN commodity IN ('ox','hen','bull','cow','calf','fish','duck','goat','he buffalo','pigs','she buffalo') THEN 'livestock' ELSE 'Edible' END AS category
+FROM [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$]
+
+-- 6. viewing the percentage change of every commodity by two methods
+
+--6a. by self join
+
+SELECT state,District,Market,real.commodity,[Max Price],avg_price,CONCAT(ROUND((([Max Price]-avg_price)/avg_price) *100,2),'%') AS p_change
 
 
---FROM 
+FROM 
 
---(SELECT commodity,ROUND(avg([max price]),2) AS avg_price
---FROM [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$]
---GROUP BY commodity) AS test, [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$] AS real
+(SELECT commodity,ROUND(avg([max price]),2) AS avg_price
+FROM [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$]
+GROUP BY commodity) AS test, [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$] AS real
 
---WHERE real.Commodity = test.Commodity
+WHERE real.Commodity = test.Commodity
 
-----2. by window function row_numbers were also added
---SELECT *,CONCAT(ROUND((([Max Price]-avg_price)/avg_price) *100,2),'%') AS p_change,CASE WHEN ROUND((([Max Price]-avg_price)/avg_price) *100,2) >0 
---THEN 'greater_than_avg' ELSE 'lesser_than_avg' END AS category
---FROM
---(SELECT state,District,Market,commodity,[max price],ROUND(avg([max price]) OVER(PARTITION BY commodity),2) as avg_price
---FROM [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$]) AS test
+--6b. by window function row_numbers were also added
 
----- the higest selling market of every state
---SELECT *
---FROM
+SELECT *,CONCAT(ROUND((([Max Price]-avg_price)/avg_price) *100,2),'%') AS p_change,CASE WHEN ROUND((([Max Price]-avg_price)/avg_price) *100,2) >0 
+THEN 'greater_than_avg' ELSE 'lesser_than_avg' END AS category
+FROM
+(SELECT state,District,Market,commodity,[max price],ROUND(avg([max price]) OVER(PARTITION BY commodity),2) as avg_price
+FROM [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$]) AS test
 
---(SELECT *,rank() OVER(PARTITION BY state ORDER BY avg_modal DESC) AS ranky
+--7. the higest selling market of every state
 
---FROM
+SELECT *
+FROM
 
---(SELECT state,market,SUM([modal price]) AS avg_modal
---FROM [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$]
---GROUP BY market,state) AS test) AS test2
+(SELECT *,rank() OVER(PARTITION BY state ORDER BY avg_modal DESC) AS ranky
 
---WHERE ranky =1 
+FROM
+
+(SELECT state,market,SUM([modal price]) AS avg_modal
+FROM [dbo].[CRIME_REVIEW_FOR_THE_MONTH_OF_J$]
+GROUP BY market,state) AS test) AS test2
+
+WHERE ranky =1 
